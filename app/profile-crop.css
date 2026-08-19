@@ -1,0 +1,8 @@
+.profile-card > img {
+  object-position: center 22%;
+}
+
+.profile-card.profile-harold > img,
+.profile-card.profile-miller > img {
+  object-position: center 12%;
+}
