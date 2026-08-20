@@ -541,7 +541,7 @@ export async function POST(request: Request) {
           }
         }
         if (eventIndex < 0) eventIndex = visibleTurn.events.length - 1;
-        return { id: cue.id, kind: "image" as const, url: cue.url, title: cue.title, eventIndex };
+        return { id: cue.id, kind: "image" as const, url: cue.url, alt: cue.title, caption: cue.title, eventIndex };
       });
 
     return Response.json({
