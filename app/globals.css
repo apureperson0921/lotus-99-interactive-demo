@@ -165,3 +165,35 @@
 .costume-entry-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 18px}.costume-entry-options button{overflow:hidden;padding:0 0 12px;border:1px solid rgba(215,181,111,.3);border-radius:12px;background:#111217;color:#eadfce;text-align:left}.costume-entry-options button:hover,.costume-entry-options button:focus-visible{border-color:#d7b56f;outline:0;background:#19181a}.costume-entry-options img{display:block;width:100%;aspect-ratio:1.45/1;object-fit:cover;filter:saturate(.82) contrast(1.07)}.costume-entry-options span{display:block;padding:10px 10px 0;color:#ead6aa;font-size:12px;line-height:1.4}.costume-entry-options small{display:block;padding:5px 10px 0;color:#8f9095;font-size:9px;line-height:1.5}
 .finale-card{max-height:calc(100dvh - 36px);overflow-y:auto;padding:24px 18px}.finale-card>header{text-align:center}.finale-votes{display:grid;gap:9px;margin:20px 0}.finale-votes article{display:flex;gap:11px;padding:12px;border:1px solid rgba(215,181,111,.16);border-radius:11px;background:#101116}.finale-votes article>div{min-width:0}.finale-votes b{color:#eadcc4;font-size:13px}.finale-votes small{margin-left:8px;color:#ba9b62;font-size:9px}.finale-votes p{margin:5px 0 0;color:#bdb5a9;font-size:12px;line-height:1.55}.finale-last-vote{display:grid;gap:9px}.finale-last-vote>span{margin-bottom:2px;color:#d8bd80;font-size:11px;text-align:center;letter-spacing:.1em}.finale-option{padding:14px;border:1px solid rgba(215,181,111,.32);border-radius:11px;background:#15161b;color:#eee6d9;text-align:left}.finale-option.destroy{border-color:#945c57;background:linear-gradient(135deg,#321918,#151316)}.finale-option.preserve{border-color:#8d7a50;background:linear-gradient(135deg,#302918,#141517)}.finale-option strong{display:block;font-size:15px;font-weight:400}.finale-option small{display:block;margin-top:6px;color:#b9b0a3;font-size:11px;line-height:1.5}.finale-option:disabled{opacity:.55}
 .ending-card{padding:24px 20px;text-align:center}.ending-video{position:relative;overflow:hidden;aspect-ratio:16/9;margin:18px 0;border:1px solid rgba(215,181,111,.25);border-radius:11px;background:#050609}.ending-video img,.ending-video video{width:100%;height:100%;object-fit:cover}.ending-video i{position:absolute;left:10px;bottom:8px;padding:4px 7px;border-radius:999px;background:#030407bf;color:#cbb78d;font:8px ui-monospace,SFMono-Regular,Menlo,monospace;font-style:normal;letter-spacing:.1em}.ending-card>button{width:100%}
+
+/* The opening reads like a recovered archive, then hands the player the Vlog. */
+.cinema:has(.opening-archive-wrap){padding:20px 0 22px;background:linear-gradient(180deg,rgba(3,4,7,.56),rgba(3,4,7,.94)),url('/precinct-rain-night.png') center/cover!important}
+.cinema:has(.opening-archive-wrap)::after{background:linear-gradient(180deg,rgba(5,6,9,.08),#050609 99%)}
+.opening-archive-wrap{position:relative;z-index:2;margin:0 17px}
+.opening-archive{position:relative;overflow:hidden;color:#272018;border:1px solid #2c251e;background:linear-gradient(105deg,rgba(119,82,42,.06),transparent 18%,rgba(255,255,255,.18) 48%,transparent 75%),#e9dec7;box-shadow:inset 0 0 0 4px #e9dec7,inset 0 0 0 6px #40362b,0 18px 42px rgba(0,0,0,.48)}
+.opening-archive::before{content:"";pointer-events:none;position:absolute;inset:7px;border:1px solid rgba(54,43,33,.62)}
+.opening-archive::after{content:"INTERNAL · NIGHT SHIFT";pointer-events:none;position:absolute;right:-18px;top:51%;padding:5px 21px;border:2px solid rgba(113,40,35,.12);color:rgba(113,40,35,.13);font:700 14px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em;transform:rotate(-8deg)}
+.archive-masthead{position:relative;padding:27px 28px 20px;border-bottom:3px double #453b31;text-align:center}
+.archive-masthead small{display:block;color:#6e6254;font:8px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.22em}
+.archive-masthead h2{margin:8px 0 6px;color:#241d17;font-size:28px;font-weight:700;letter-spacing:.18em;line-height:1.2}
+.archive-masthead span{color:#51463a;font:italic 11px/1.4 Georgia,"Songti SC",serif;letter-spacing:.08em}
+.archive-body{position:relative;min-height:430px;padding:24px 27px 22px}
+.archive-body h3{margin:0 0 18px;padding-bottom:11px;border-bottom:1px solid #54483a;color:#2c241d;font-size:21px;font-weight:400;letter-spacing:.04em}
+.archive-row{margin:0 0 17px}
+.archive-row:last-child{margin-bottom:0}
+.archive-row b{display:block;margin-bottom:5px;color:#74332e;font-size:13px;font-weight:600;letter-spacing:.04em}
+.archive-row p{margin:0;color:#302821;font-size:13px;line-height:1.78;text-align:justify}
+.archive-footer{position:relative;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:14px 18px 17px;border-top:3px double #453b31}
+.archive-footer span{color:#392f26;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.18em;text-align:center}
+.archive-footer button{display:grid;width:34px;height:34px;padding:0;place-items:center;border:1px solid #4d4134;background:rgba(255,255,255,.16);color:#2a221b;font-size:16px}
+.archive-footer button:last-child{justify-self:end}
+.archive-footer button:hover:not(:disabled){background:#d7c6a7}
+.archive-footer button:disabled{opacity:.2;cursor:default}
+.opening-vlog-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 1px 0;padding:12px 13px;border:1px solid rgba(215,181,111,.35);border-radius:10px;background:linear-gradient(90deg,rgba(15,16,20,.96),rgba(8,9,13,.9));box-shadow:0 10px 28px rgba(0,0,0,.3)}
+.opening-vlog-entry>div{min-width:0}
+.opening-vlog-entry small{display:block;margin-bottom:4px;color:#847b6f;font:8px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.15em}
+.opening-vlog-entry strong{display:block;overflow:hidden;color:#dfd5c5;font-size:12px;font-weight:400;line-height:1.45;text-overflow:ellipsis;white-space:nowrap}
+.opening-vlog-entry button{display:flex;flex:0 0 auto;align-items:center;gap:7px;padding:0;border:0;background:transparent;color:#d9c18d;font-size:11px}
+.opening-vlog-entry button b{display:grid;width:28px;height:28px;place-items:center;border:1px solid rgba(215,181,111,.62);border-radius:50%;font-size:8px}
+.opening-vlog-entry button:hover b{background:rgba(215,181,111,.14)}
+@media(max-width:390px){.opening-archive-wrap{margin-right:12px;margin-left:12px}.archive-masthead{padding-right:22px;padding-left:22px}.archive-body{min-height:452px;padding-right:22px;padding-left:22px}.archive-row p{font-size:12.5px}.opening-vlog-entry strong{max-width:190px}}

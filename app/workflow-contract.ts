@@ -207,7 +207,7 @@ export type RuntimeSegment = {
 };
 
 export type ResponseContract = {
-  event_count: { min: 4; max: 7 };
+  event_count: { min: 8; max: 12 };
   choices: {
     count: 2;
     allowed_kinds: Array<"action" | "speech">;

@@ -166,6 +166,32 @@ function canonicalFallbackCandidate(runtime: RuntimePackage, segment: RuntimeSeg
   };
 }
 
+function cinematicFallbackCandidate(
+  candidate: { events: Array<{ type: string; person?: string; text: string }>; choices: Array<{ kind: string; text: string }> },
+  segment: RuntimeSegment,
+  minEvents = 8,
+  maxEvents = 12,
+) {
+  const first = segment.present[0];
+  const second = segment.present[1] ?? first;
+  const third = segment.present[2] ?? second;
+  const continuation = [
+    { type: "narration", text: `没有人把现场按下暂停。${segment.scene.slice(0, 120)}` },
+    { type: "reaction", person: second, text: "他没有急着接话，先把刚才被忽略的细节重新核对了一遍。" },
+    { type: "dialogue", person: first, text: fallbackDialogue[first] ?? "先别急着收口。眼前这件事还有一层没说清。" },
+    { type: "action", person: third, text: "他顺着现场已有的东西继续往下查，把一个原本只停留在猜测里的问题摆到了众人面前。" },
+    { type: "dialogue", person: second, text: fallbackDialogue[second] ?? "这一步做完，我们至少知道下一扇门该从哪边推。" },
+    { type: "narration", text: "几个人的分歧没有消失，却第一次落到了同一个可以执行的问题上。" },
+  ];
+  const events = [...candidate.events];
+  let index = 0;
+  while (events.length < minEvents) {
+    events.push(continuation[index % continuation.length]);
+    index += 1;
+  }
+  return { ...candidate, events: events.slice(0, maxEvents) };
+}
+
 type VisibleEvent = {
   type: "narration" | "dialogue" | "action" | "reaction";
   person?: string;
@@ -209,14 +235,16 @@ function visibleChoice(value: unknown): VisibleChoice | undefined {
 function visibleTurnCandidate(raw: unknown, runtime: RuntimePackage, segment: RuntimeSegment, inputKind: PlayerInputKind): VisibleTurn {
   const present = new Set(segment.present);
   const item = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
-  const fallback = canonicalFallbackCandidate(runtime, segment, inputKind);
+  const { min, max } = runtime.runtime.response_contract.event_count;
+  const fallback = cinematicFallbackCandidate(canonicalFallbackCandidate(runtime, segment, inputKind), segment, min, max);
   const fallbackEvents = fallback.events.flatMap((entry) => visibleEvent(entry, present) ?? []);
   const events = (Array.isArray(item.events) ? item.events : [])
     .flatMap((entry) => visibleEvent(entry, present) ?? [])
-    .slice(0, 7);
-  for (const entry of fallbackEvents) {
-    if (events.length >= 4) break;
-    events.push(entry);
+    .slice(0, max);
+  let fallbackIndex = 0;
+  while (events.length < min && fallbackEvents.length) {
+    events.push(fallbackEvents[fallbackIndex % fallbackEvents.length]);
+    fallbackIndex += 1;
   }
 
   const fallbackChoices = fallback.choices.flatMap((entry) => visibleChoice(entry) ?? []);
@@ -230,7 +258,7 @@ function visibleTurnCandidate(raw: unknown, runtime: RuntimePackage, segment: Ru
   }
   if (choices.length < 2 && !choices.some((entry) => entry.text === "先听听他们怎么说")) choices.push({ kind: "speech", text: "先听听他们怎么说" });
   if (choices.length < 2) choices.push({ kind: "action", text: "先把眼前的事做完" });
-  return { events: events.slice(0, 7), choices: choices.slice(0, 2) };
+  return { events: events.slice(0, max), choices: choices.slice(0, 2) };
 }
 
 function isNetworkOrTimeoutFailure(error: unknown) {
@@ -357,15 +385,6 @@ function chapterCompletePayload(
   };
 }
 
-
-const SCENE_IMAGE_CUES = [
-  { id: "ch01-drive-to-red-hook", materialId: "m_ch01_s02_schedule", url: "/ch01-drive-to-red-hook.png", title: "深夜驶向红钩区", pattern: /离开警局|出发|上车|前往|驶向|红钩|Red Hook|码头/ },
-  { id: "ch02-red-hook-arrival", materialId: "m_ch01_s03_arrival", url: "/ch02-red-hook-arrival.png", title: "红钩区第99号仓库外", pattern: /门牌|墙面|排水管|对上|第99号|仓库|抵达/ },
-  { id: "ch01-unknown-mechanic-monitor", materialId: "m_ch01_s04_monitor", url: "/ch01-unknown-mechanic-monitor.png", title: "监控画面：暴雨中修理机甲的白发老人", pattern: /监控|录像|回放|画面|白发/ },
-  { id: "ch03-maya-found", materialId: "m_ch03_s02_maya", url: "/ch03-maya-found.png", title: "后台：找到玛雅", pattern: /玛雅/ },
-  { id: "ch03-zero-unmasked", materialId: "m_ch03_s03_unmask", url: "/ch03-zero-unmasked.png", title: "零点摘下面罩", pattern: /面罩|摘下|揭下|丹尼尔/ },
-] as const;
-
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { sessionId?: string; workflowToken?: string; history?: Message[]; input?: string; inputKind?: string; playerProfile?: string };
@@ -433,17 +452,22 @@ export async function POST(request: Request) {
         prompt3(packet, input, inputKind),
         "生成Prompt 3本轮输出。",
         0.55,
-        2200,
+        4200,
         {
           stage: "prompt3",
-          requestTimeoutMs: 18000,
+          requestTimeoutMs: 30000,
         },
       );
     } catch (error) {
       if (isNetworkOrTimeoutFailure(error)) throw error;
       modelFallbackReason = error instanceof Error ? error.message : "model_output_unavailable";
       console.warn("[prompt3-soft-policy] model output replaced with canon fallback", { reason: modelFallbackReason });
-      raw = canonicalFallbackCandidate(policyRuntime, segment, inputKind);
+      raw = cinematicFallbackCandidate(
+        canonicalFallbackCandidate(policyRuntime, segment, inputKind),
+        segment,
+        policyRuntime.runtime.response_contract.event_count.min,
+        policyRuntime.runtime.response_contract.event_count.max,
+      );
     }
 
     const modelVisibleTurn = visibleTurnCandidate(raw, policyRuntime, segment, inputKind);
@@ -454,7 +478,12 @@ export async function POST(request: Request) {
     if (!validation.ok) {
       protocolNotice = validation.reason;
       console.warn("[prompt3-soft-policy] displaying model reply and advancing with canon state", { reason: validation.reason });
-      const canonicalRaw = canonicalFallbackCandidate(policyRuntime, segment, inputKind);
+      const canonicalRaw = cinematicFallbackCandidate(
+        canonicalFallbackCandidate(policyRuntime, segment, inputKind),
+        segment,
+        policyRuntime.runtime.response_contract.event_count.min,
+        policyRuntime.runtime.response_contract.event_count.max,
+      );
       const canonicalValidation = validateAndNormalizeTurn(canonicalRaw, context);
       if (!canonicalValidation.ok) {
         console.error("[prompt3-soft-policy] canon fallback could not advance state", { reason: canonicalValidation.reason });
@@ -529,20 +558,77 @@ export async function POST(request: Request) {
           && /(听见|听到|认出|僵住|僵在|手电|弟弟)/.test(nearby);
       })
       : -1;
-
-    const usedMaterialsThisTurn = validation.turn.state_delta.used_material_ids ?? [];
-    const sceneImageCues = SCENE_IMAGE_CUES
-      .filter((cue) => usedMaterialsThisTurn.includes(cue.materialId))
-      .map((cue) => {
-        let eventIndex = visibleTurn.events.findIndex((event) => cue.pattern.test(event.text));
-        if (eventIndex < 0) {
-          for (let index = visibleTurn.events.length - 1; index >= 0; index -= 1) {
-            if (visibleTurn.events[index].type === "narration") { eventIndex = index; break; }
-          }
-        }
-        if (eventIndex < 0) eventIndex = visibleTurn.events.length - 1;
-        return { id: cue.id, kind: "image" as const, url: cue.url, alt: cue.title, caption: cue.title, eventIndex };
-      });
+    const usedMaterialIds = validation.turn.state_delta.used_material_ids ?? [];
+    const visualCueDefinitions = [
+      {
+        materialId: "m_ch01_s02_schedule",
+        id: "ch01-drive-to-red-hook",
+        url: "/ch01-drive-to-red-hook.png",
+        alt: "艾琳和米勒离开警局，驱车前往旧码头",
+        caption: "离开第七分局 · 前往旧码头",
+        anchor: /(离开|走出|出了|从).{0,8}(警局|第七分局).{0,10}(出发|上车|开车|前往)|(?:警局|第七分局).{0,8}(门外|台阶|停车场).{0,10}(出发|上车|开车)/,
+      },
+      {
+        materialId: "m_ch01_s04_camera_access",
+        id: "ch01-red-hook-camera-search",
+        url: "/ch02-red-hook-arrival.png",
+        alt: "众人抵达旧码头，在沿街商铺调查后巷监控",
+        caption: "旧码头 · 调查周边监控",
+        anchor: /(旧码头|Red Hook|第99号仓库|街口|商铺).{0,16}(监控|摄像头|录像)|(?:监控|摄像头|录像).{0,16}(旧码头|街口|商铺|后巷)/,
+      },
+      {
+        materialId: "m_ch01_s04_monitor",
+        id: "ch01-unknown-mechanic-monitor",
+        url: "/ch01-unknown-mechanic-monitor.png",
+        alt: "监控拍到身份不明的白发老人推着工具车穿过雨夜后巷",
+        caption: "第一章 · 后巷监控画面",
+        anchor: /(监控|录像|画面).{0,20}(白发|老人|修理工)|(?:白发|老人|修理工).{0,20}(监控|录像|画面)/,
+      },
+      {
+        materialId: "m_ch03_s02_maya",
+        id: "ch03-maya-found",
+        url: "/ch03-maya-found.png",
+        alt: "众人在 Lotus 99 找到仍然活着的玛雅",
+        caption: "Lotus 99 · 找到玛雅",
+        anchor: /(玛雅|后台|活着|本人)/,
+      },
+      {
+        materialId: "m_ch03_s03_unmask",
+        id: "ch03-zero-unmasked",
+        url: "/ch03-zero-unmasked.png",
+        alt: "零点摘下面罩，艾琳认出弟弟丹尼尔",
+        caption: "Lotus 99 · 零点摘下面罩",
+        anchor: /(零点|面罩|丹尼尔|弟弟)/,
+      },
+    ] as const;
+    const visualMediaCues = visualCueDefinitions.flatMap((definition) => {
+      if (!usedMaterialIds.includes(definition.materialId)) return [];
+      const matchedIndex = visibleTurn.events.findIndex((event) => definition.anchor.test(event.text));
+      return [{
+        id: definition.id,
+        kind: "image" as const,
+        url: definition.url,
+        alt: definition.alt,
+        caption: definition.caption,
+        eventIndex: matchedIndex >= 0 ? matchedIndex : Math.max(0, visibleTurn.events.length - 1),
+      }];
+    });
+    const travelMediaCues = segment.id === "ch01_s02" && nextSegment.id === "ch01_s03" && !visualMediaCues.some((cue) => cue.id === "ch01-drive-to-red-hook")
+      ? [{
+        id: "ch01-drive-to-red-hook",
+        kind: "image" as const,
+        url: "/ch01-drive-to-red-hook.png",
+        alt: "艾琳和米勒开车穿过雨夜，离开第七分局前往红钩第99号仓库",
+        caption: "离开第七分局 · 前往 Red Hook",
+        eventIndex: Math.max(0, visibleTurn.events.length - 1),
+      }]
+      : [];
+    const audioMediaCue = childhoodSongEventIndex >= 0 ? {
+      id: "ch02-childhood-song",
+      kind: "audio" as const,
+      url: "/childhood-country-americana-approach.mp3",
+      eventIndex: childhoodSongEventIndex,
+    } : undefined;
 
     return Response.json({
       workflowToken: await sealWorkflow(commit.workflow),
@@ -553,13 +639,9 @@ export async function POST(request: Request) {
       visibleCharacters: visibleCharacterIds(commit.workflow.storyPackage, commit.workflow.runtimePackage, nextSegment),
       responseContract: commit.workflow.runtimePackage.runtime.response_contract,
       playerProfile,
-      mediaCue: childhoodSongEventIndex >= 0 ? {
-        id: "ch02-childhood-song",
-        kind: "audio",
-        url: "/childhood-country-americana-approach.mp3",
-        eventIndex: childhoodSongEventIndex,
-      } : undefined,
-      mediaCues: sceneImageCues.length ? sceneImageCues : undefined,
+      mediaCues: [...(audioMediaCue ? [audioMediaCue] : []), ...visualMediaCues, ...travelMediaCues],
+      // Keep the original single cue during the client migration.
+      mediaCue: audioMediaCue,
       chapterComplete,
       finaleVote,
       ...(protocolNotice ? { protocolNotice } : {}),

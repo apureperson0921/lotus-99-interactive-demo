@@ -167,7 +167,7 @@ export function createPrecompiledWorkflow(): { storyPackage: StoryPackage; runti
         "制度权限、技术能力、强制措施与倒计时必须由正史事实或当前段素材明确支持；角色不能为制造压力临时发明规定、断网、封锁、撤职或万能设备。",
         "案件推进必须同时回答人的问题与证据的问题：失踪者是谁、为何前往、关系怎样，再核查时间线、朋友家人、交通、监控、文件和现场。",
         "每段默认先完成两个关系或社交节拍，再按因果顺序使用本段素材；不得只因轮数达到阈值就跳过必要事件。",
-        "每轮4至7条事件，至少两名在场NPC以台词、动作、停顿或互相承接参与，至少一人开口；同一NPC可以连续说话，不强迫轮流点名。",
+        "每轮8至12条事件组成一个完整的电影探索场景块：接住玩家后，NPC继续自己的目标，至少形成一项探索收益、一项关系或情感代价，再停在真正需要玩家决定的位置。",
       ],
       endgame: {
         type: "bounded_choice",
@@ -718,7 +718,7 @@ export function createPrecompiledWorkflow(): { storyPackage: StoryPackage; runti
       style: source.style,
       player_contract: clone(playerContract),
       response_contract: {
-        event_count: { min: 4, max: 7 },
+        event_count: { min: 8, max: 12 },
         choices: {
           count: 2,
           allowed_kinds: ["action", "speech"],
