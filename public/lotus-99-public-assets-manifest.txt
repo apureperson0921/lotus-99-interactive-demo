@@ -1,0 +1,43 @@
+LOTUS 99 完整部署素材清单
+
+本压缩包保留项目所需的 public/ 目录结构。部署时请将整个 public/ 文件夹放在项目根目录，不要改名。
+
+角色头像：
+- public/characters/erin.png：艾琳
+- public/characters/harold.png：哈罗德
+- public/characters/miller.png：米勒
+- public/characters/maya.png：玛雅
+- public/characters/ward.png：沃德
+- public/characters/daniel.png：丹尼尔
+
+第一章场景图片：
+- public/ch01-drive-to-red-hook.png：触发节点“众人从警局出来，正式出发前往旧码头”
+- public/ch02-red-hook-arrival.png：触发节点“第一章抵达旧码头后，开始调查周边商铺监控”
+- public/ch01-unknown-mechanic-monitor.png：触发节点“第一章查看监控，首次看到身份不明的白发老人”
+
+第三章剧情图片：
+- public/ch03-maya-found.png：触发节点“众人在 Lotus 99 找到玛雅”
+- public/ch03-zero-unmasked.png：触发节点“零点摘下面罩，艾琳认出丹尼尔”
+
+章节与结局媒体：
+- public/maya-opening-vlog.mp4
+- public/chapter-01-ward-monitor.mp4
+- public/chapter-01-ward-monitor-poster.jpg
+- public/chapter-03-erin-daniel-childhood.mp4
+- public/childhood-country-americana-approach.mp3
+- public/chapter-03-costume-dobby.jpg
+- public/chapter-03-costume-guardians.jpg
+- public/ending-01-awakened-world.mp4
+- public/ending-02-eleven-minutes.mp4
+
+背景与界面资源：
+- public/precinct-rain-night.png
+- public/chapters-maya-vlog.png
+- public/favicon.svg
+- public/file.svg
+- public/globe.svg
+- public/window.svg
+
+兼容副本：
+- public/chapter-03-costume-dobby.png
+- public/chapter-03-costume-guardians.png
