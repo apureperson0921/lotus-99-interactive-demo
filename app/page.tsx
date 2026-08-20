@@ -10,7 +10,8 @@ type PlayerInput = { id?: string; text: string; kind: ChoiceKind | "freeform" | 
 type ActorId = string;
 type Choice = { id?: string; text: string; kind: ChoiceKind };
 type ProtocolEvent = { id: string; type: EventType; person?: ActorId; text: string };
-type UiMessage = { id: string | number; person?: ActorId; label?: string; text: string; kind?: "system" | "player"; eventType?: EventType };
+type UiMessage = { id: string | number; person?: ActorId; label?: string; text: string; kind?: "system" | "player"; eventType?: EventType; imageUrl?: string; imageTitle?: string };
+type SceneImageCue = { id: string; url: string; title?: string; eventIndex: number };
 type PublicCharacter = { id: ActorId; name: string; role: string; image?: string; bio: string };
 type ResponseContract = { minEvents: number; maxEvents: number; choiceCount: number };
 type LockedOpening = { events: ProtocolEvent[]; choices: Choice[]; wildcardSpeech: Choice[]; present: ActorId[]; roleCardActors: ActorId[]; joinHint?: string };
@@ -445,7 +446,7 @@ export default function Home() {
 
   function finishVlog() { setVideoState("frame"); setWatchedVlog(true); }
 
-  async function typeScene(events: ProtocolEvent[], messageId: number, audioCueEventIndex = -1) {
+  async function typeScene(events: ProtocolEvent[], messageId: number, audioCueEventIndex = -1, sceneImageCues: SceneImageCue[] = []) {
     for (let offset = 0; offset < events.length; offset += 1) {
       const event = events[offset];
       const fullText = event.text.trim();
@@ -460,6 +461,12 @@ export default function Home() {
       }
       setStreamingId(null);
       if (offset === audioCueEventIndex) void playChildhoodSong();
+      for (const cue of sceneImageCues) {
+        if (cue.eventIndex !== offset || playedStoryCues.current.has(cue.id)) continue;
+        playedStoryCues.current.add(cue.id);
+        setMessages((current) => [...current, { id: `scene-image-${cue.id}`, kind: "system", eventType: "narration", text: "", imageUrl: cue.url, ...(cue.title ? { imageTitle: cue.title } : {}) }]);
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 320));
+      }
       await new Promise<void>((resolve) => window.setTimeout(resolve, 160));
     }
   }
@@ -517,7 +524,11 @@ export default function Home() {
         ? Number(mediaCue.eventIndex ?? mediaCue.event_index)
         : -1;
       if (controls.choices.length !== contract.choiceCount) throw new Error(`协议校验失败：本轮收到 ${controls.choices.length} 个选项，要求 ${contract.choiceCount} 个。`);
-      await typeScene(events, id, audioCueEventIndex);
+      const sceneImageCues: SceneImageCue[] = (Array.isArray(payload.mediaCues) ? payload.mediaCues : [])
+        .map((item) => asObject(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item) && item!.kind === "image" && typeof item!.url === "string" && Number.isInteger(Number(item!.eventIndex ?? item!.event_index)))
+        .map((item) => ({ id: String(item.id ?? item.url), url: String(item.url), ...(typeof item.title === "string" ? { title: item.title } : {}), eventIndex: Number(item.eventIndex ?? item.event_index) }));
+      await typeScene(events, id, audioCueEventIndex, sceneImageCues);
       if (controls.wildcardSpeech.length) sessionWildcardSpeech.current = controls.wildcardSpeech;
       setLiveChoices(controls.choices);
       setWildcardSpeech(sessionWildcardSpeech.current);
@@ -755,6 +766,7 @@ export default function Home() {
       <section className="story-pane"><div className="scene-line"><span>当前现场</span>{active.scene}</div>{restartNote && <div className="restart-note">↺ {restartNote}</div>}<div className="messages">{messages.map((message) => {
         const streaming = message.id === streamingId ? "is-streaming" : "";
         if (message.kind === "player") return <article className={`message player ${streaming}`} key={message.id}><div><header>{message.label}<small>{message.label === "本次身份" ? "你加入故事的方式" : "你的判断"}</small></header><p>{message.text}</p></div></article>;
+        if (message.imageUrl) return <figure className="scene-image" key={message.id}><img src={message.imageUrl} alt={message.imageTitle ?? "场景画面"} loading="lazy" />{message.imageTitle && <figcaption>{message.imageTitle}</figcaption>}</figure>;
         const eventType = message.eventType ?? (message.person ? "dialogue" : "narration");
         if (eventType !== "dialogue" || !message.person) return <p className={`narration event-${eventType} ${streaming}`} key={message.id}>{message.text}</p>;
         const entry = characters[message.person] ?? { id: message.person, name: message.person, role: "故事角色", bio: "角色资料尚未公开。" };

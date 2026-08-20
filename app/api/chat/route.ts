@@ -357,6 +357,15 @@ function chapterCompletePayload(
   };
 }
 
+
+const SCENE_IMAGE_CUES = [
+  { id: "ch01-drive-to-red-hook", materialId: "m_ch01_s02_schedule", url: "/ch01-drive-to-red-hook.png", title: "深夜驶向红钩区", pattern: /离开警局|出发|上车|前往|驶向|红钩|Red Hook|码头/ },
+  { id: "ch02-red-hook-arrival", materialId: "m_ch01_s03_arrival", url: "/ch02-red-hook-arrival.png", title: "红钩区第99号仓库外", pattern: /门牌|墙面|排水管|对上|第99号|仓库|抵达/ },
+  { id: "ch01-unknown-mechanic-monitor", materialId: "m_ch01_s04_monitor", url: "/ch01-unknown-mechanic-monitor.png", title: "监控画面：暴雨中修理机甲的白发老人", pattern: /监控|录像|回放|画面|白发/ },
+  { id: "ch03-maya-found", materialId: "m_ch03_s02_maya", url: "/ch03-maya-found.png", title: "后台：找到玛雅", pattern: /玛雅/ },
+  { id: "ch03-zero-unmasked", materialId: "m_ch03_s03_unmask", url: "/ch03-zero-unmasked.png", title: "零点摘下面罩", pattern: /面罩|摘下|揭下|丹尼尔/ },
+] as const;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { sessionId?: string; workflowToken?: string; history?: Message[]; input?: string; inputKind?: string; playerProfile?: string };
@@ -521,6 +530,20 @@ export async function POST(request: Request) {
       })
       : -1;
 
+    const usedMaterialsThisTurn = validation.turn.state_delta.used_material_ids ?? [];
+    const sceneImageCues = SCENE_IMAGE_CUES
+      .filter((cue) => usedMaterialsThisTurn.includes(cue.materialId))
+      .map((cue) => {
+        let eventIndex = visibleTurn.events.findIndex((event) => cue.pattern.test(event.text));
+        if (eventIndex < 0) {
+          for (let index = visibleTurn.events.length - 1; index >= 0; index -= 1) {
+            if (visibleTurn.events[index].type === "narration") { eventIndex = index; break; }
+          }
+        }
+        if (eventIndex < 0) eventIndex = visibleTurn.events.length - 1;
+        return { id: cue.id, kind: "image" as const, url: cue.url, title: cue.title, eventIndex };
+      });
+
     return Response.json({
       workflowToken: await sealWorkflow(commit.workflow),
       events: visibleTurn.events,
@@ -536,6 +559,7 @@ export async function POST(request: Request) {
         url: "/childhood-country-americana-approach.mp3",
         eventIndex: childhoodSongEventIndex,
       } : undefined,
+      mediaCues: sceneImageCues.length ? sceneImageCues : undefined,
       chapterComplete,
       finaleVote,
       ...(protocolNotice ? { protocolNotice } : {}),
