@@ -113,7 +113,7 @@ function isStoryPackage(value: unknown): value is StoryPackage {
 }
 
 function validateResponseContract(value: unknown): Validation {
-  if (!isRecord(value) || !isRecord(value.event_count) || value.event_count.min !== 4 || value.event_count.max !== 7) return fail("response_event_count_not_4_to_7");
+  if (!isRecord(value) || !isRecord(value.event_count) || value.event_count.min !== 8 || value.event_count.max !== 12) return fail("response_event_count_not_8_to_12");
   if (!isRecord(value.choices) || value.choices.count !== 2) return fail("response_choice_count_invalid");
   if (!exactJson(value.choices.allowed_kinds, ["action", "speech"])) return fail("response_choice_kinds_invalid");
   if (!Array.isArray(value.choices.forbidden_prefixes)

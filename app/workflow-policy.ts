@@ -245,7 +245,7 @@ export function buildRuntimePacket(
 
 export function runtimePolicyIssue(runtime: RuntimePackage, segment: RuntimeSegment) {
   const contract = runtime.runtime?.response_contract;
-  if (!contract || contract.event_count?.min !== 4 || contract.event_count?.max !== 7) return "response_contract_missing";
+  if (!contract || contract.event_count?.min !== 8 || contract.event_count?.max !== 12) return "response_contract_missing";
   if (contract.choices?.count !== 2) return "response_choice_contract_invalid";
   if (!segment.location?.trim() || new Set(segment.present).size < 2) return "segment_location_or_cast_invalid";
   if (!segment.scene_boundary || !Array.isArray(segment.scene_boundary.allowed_scope) || !Array.isArray(segment.scene_boundary.exit_conditions)) return "scene_boundary_missing";
